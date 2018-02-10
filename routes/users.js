@@ -6,6 +6,7 @@ var passport = require('passport');
 var LocalStrategy = require('passport-local').Strategy;
 var User = require('../models/user');
 
+
 /* GET users listing. */
 router.get('/', function(req, res, next) {
   res.send('respond with a resource');
@@ -26,13 +27,25 @@ router.post('/login',
         res.redirect('/');
     });
 
+router.get('/logout',function(req,res){
+  req.logout();
+  req.flash('success','You are logout successfully');
+  res.redirect('/users/login');
+});
 passport.use(new LocalStrategy(
     function(username, password, done) {
-        User.findOne({ username: username }, function (err, user) {
+
+        User.getUserByUsername(username, function (err, user) {
             if (err) { return done(err); }
             if (!user) { return done(null, false); }
-            if (!user.verifyPassword(password)) { return done(null, false,{message:'Invalid Password'}); }
-            return done(null, user);
+            if (User.verifyPassword(password, user.password,function(err, isMatch){
+                      if(!isMatch){
+                          return done(null, false,{message:'Invalid Password'});
+                      }else{
+                          return done(null, user);
+                      }
+                })) ;
+
         });
     }
 ));
